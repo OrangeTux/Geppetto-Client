@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Geppetto Client</title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link href="static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <link href="static/vendor/bootstrap/css/lighter.css" rel="stylesheet">
+        <style>
+            .inner-circle {
+                cursor: pointer;
+                border-radius: 50%;
+                width: 26px;
+                height: 26px;
+                background-color: white;
+                padding-top: 7px;
+            }
+        </style>
+            
+    </head>
+    
+    <body>
+        <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand nav-link" href="#top">Geppetto</a>
+                </div> <!-- /.navbar-header -->
+                <div class="collapse navbar-collapse navbar-ex1-collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="https://github.com/OrangeTux/Geppetto" class="nav-link" target="_blank">Geppetto API</a></li>
+                    </ul>
+                </div> <!-- /.navbar-collapse -->
+            </div> <!-- /.container -->
+        </nav> <!-- /.navbar -->
+
+        <div id="top" class="jumbotron">
+            <div class="container">
+                <h3>Location of Geppetto API</h3>
+                <input id="api-location" class="form-control input-lg" placeholder="192.168.178.20" autofocus="autofocus" />
+            </div> <!-- /.container -->
+        </div> <!-- /.jumbotron -->
+
+        <div class="container">
+            <div class="alert alert-danger" role="alert"></div>
+        </div>
+
+        <div class="container">
+            <h3 id="features" class="subhead">Pins</h3>
+
+            <div class="row benefits">
+                <div class="col-md-3 col-sm-6 benefit">
+                    <div class="benefit-ball">
+                        <div class="inner-circle" data-value="0">0</div>
+                    </div>
+                </div> <!-- /.benefit -->
+
+                <div class="col-md-3 col-sm-6 benefit">
+                    <div class="benefit-ball">
+                        <div class="inner-circle" data-value="0">1</div>
+                    </div>
+                </div> <!-- /.benefit -->
+
+                <div class="col-md-3 col-sm-6 benefit">
+                    <div class="benefit-ball">
+                        <div class="inner-circle" data-value="0">2</div>
+                    </div>
+                </div> <!-- /.benefit -->
+
+                <div class="col-md-3 col-sm-6 benefit">
+                    <div class="benefit-ball">
+                        <div class="inner-circle" data-value="0">3</div>
+                    </div>
+                </div> <!-- /.benefit -->
+            </div> <!-- /.row -->
+
+            <div class="row benefits">
+                <div class="col-md-3 col-sm-6 benefit">
+                    <div class="benefit-ball">
+                        <div class="inner-circle" data-value="0">4</div>
+                    </div>
+                </div> <!-- /.benefit -->
+
+                <div class="col-md-3 col-sm-6 benefit">
+                    <div class="benefit-ball">
+                        <div class="inner-circle" data-value="0">5</div>
+                    </div>
+                </div> <!-- /.benefit -->
+
+                <div class="col-md-3 col-sm-6 benefit">
+                    <div class="benefit-ball">
+                        <div class="inner-circle" data-value="0">6</div>
+                    </div>
+                </div> <!-- /.benefit -->
+
+                <div class="col-md-3 col-sm-6 benefit">
+                    <div class="benefit-ball">
+                        <div class="inner-circle" data-value="0">7</div>
+                    </div>
+                </div> <!-- /.benefit -->
+            </div> <!-- /.row -->
+        </div> <!-- /.container -->
+
+        <footer>
+            <div class="container clearfix text-center">
+                <a href="https://github.com/OrangeTux/Geppetto-client" class="nav-link" target="_blank">
+                    <img src="static/img/GitHub-Mark-Light-32px.png" />
+                </a>
+            </div> <!-- /.container -->
+        </footer>
+
+        <script src="static/vendor/bootstrap/js/jquery.js"></script>
+        <script src="static/vendor/bootstrap/js/bootstrap.min.js"></script>
+        <script>
+            /** Hide alert elements by default **/
+            $('.alert').hide();
+
+            /** Click handler of outer circle are passed to inner circle. **/
+            $(".benefit-ball").click(function() {
+                $(this).children()[0].click();
+            });
+
+            /** Do HTTP POST request on API to enable/disable pin. **/
+            $(".inner-circle").click(function() {
+                var pinNumber = $(this).text();
+                // Invert current state of pin. When pin is 0, set it to 1 and vice versa.
+                var pinValue =  ($(this).data('value') == 0 ? 1 : 0);
+                console.log('Pin value: ' + pinValue);
+                var url = buildRequestUrl(pinNumber);
+                console.log(url);
+
+                if (!url) {
+                    showAlert('No API location has been given.');
+                    return
+                }
+                
+                var data = buildRequestData(pinValue);
+                response =  doApiRequest(url, data);
+
+                var that = this;
+                response.success(function(data) {
+                    $(that).data('value', data.value);
+
+                    if (data.value == 1) {
+                        $(that).parent().css('background', '#111');
+                    } else {
+                        $(that).parent().css('background', '#f0f0f0');
+                    }
+                    
+                    $('.alert').hide();
+                });
+
+                response.fail(function(response) {
+                    showAlert('Something went wrong on the API');
+                });
+            });
+
+            /** Build request URL with API uri and pin number. **/
+            function buildRequestUrl(pinNumber) {
+                var apiUri = getApiUri();
+
+                if (apiUri) {
+                    return url = 'http://' + apiUri + '/gpio/' + pinNumber + '/setpoint'
+                }
+
+                return false;
+            }
+
+            /** Show alert div with given message. **/
+            function showAlert(message) {
+                $('.alert').html(message);
+                $('.alert').show();
+            }
+
+            /** Retrieve API uri from input. **/
+            function getApiUri() {
+                return $('#api-location').val();
+            }
+
+            /** Create request data for POST request. **/
+            function buildRequestData(pinValue) {
+                return {'value': pinValue}
+            }
+
+            /** Perform HTTP POST request on API. **/
+            function doApiRequest(url, data) {
+                return $.ajax({
+                    accepts: 'application/json',
+                    contentType: 'application/json',
+                    crossDomain: true,
+                    data: JSON.stringify(data),
+                    type: 'POST',
+                    url: url
+                });
+            }
+        </script>
+    </body>
+</html>
